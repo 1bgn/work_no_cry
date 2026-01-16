@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:signals/signals_flutter.dart';
 
 import '../../../app/di/injection.dart';
 import '../../../shared/presentation/format_duration.dart';
@@ -46,61 +47,66 @@ class _TaskPageState extends State<TaskPage> {
       );
     }
 
-    final live = Duration(milliseconds: timer.tickMs.value);
     final stored = task.spent;
 
     return Scaffold(
       appBar: AppBar(title: Text(task.title)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Работа: ${work.title}', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            Text('Накоплено (сохранено): ${formatDuration(stored)}'),
-            const SizedBox(height: 8),
-            Text('Текущая сессия: ${formatDuration(live)}'),
-            const SizedBox(height: 8),
-            Text('Будет итого: ${formatDuration(stored + live)}'),
-            const Spacer(),
-            Row(
+      body: Watch(
+         (context) {
+           final live = Duration(milliseconds: timer.tickMs.value);
+
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () {
-                      timer.start();
-                      setState(() {});
-                    },
-                    child: const Text('Старт'),
-                  ),
+                Text('Работа: ${work.title}', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                Text('Накоплено (сохранено): ${formatDuration(stored)}'),
+                const SizedBox(height: 8),
+                Text('Текущая сессия: ${formatDuration(live)}'),
+                const SizedBox(height: 8),
+                Text('Будет итого: ${formatDuration(stored + live)}'),
+                const Spacer(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          timer.start();
+                          setState(() {});
+                        },
+                        child: const Text('Старт'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          timer.pause();
+                          setState(() {});
+                        },
+                        child: const Text('Пауза'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      timer.pause();
-                      setState(() {});
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonal(
+                    onPressed: () async {
+                      await timer.stopAndSave();
+                      await works.load(); // подтянуть обновлённое время в списки
+                      if (mounted) setState(() {});
                     },
-                    child: const Text('Пауза'),
+                    child: const Text('Стоп и сохранить'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonal(
-                onPressed: () async {
-                  await timer.stopAndSave();
-                  await works.load(); // подтянуть обновлённое время в списки
-                  if (mounted) setState(() {});
-                },
-                child: const Text('Стоп и сохранить'),
-              ),
-            ),
-          ],
-        ),
+          );
+        }
       ),
     );
   }
