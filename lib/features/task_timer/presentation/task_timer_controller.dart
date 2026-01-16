@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:signals/signals.dart';
-
 import '../application/task_timer_service.dart';
 
 class TaskTimerController {
@@ -14,6 +13,8 @@ class TaskTimerController {
   final _sw = Stopwatch();
   Timer? _timer;
 
+  int? _startedAtMs;
+
   TaskTimerController(
       this._service, {
         required this.workId,
@@ -22,6 +23,9 @@ class TaskTimerController {
 
   void start() {
     if (isRunning.value) return;
+
+    _startedAtMs ??= DateTime.now().millisecondsSinceEpoch;
+
     isRunning.value = true;
     _sw.start();
     _timer ??= Timer.periodic(const Duration(milliseconds: 250), (_) {
@@ -35,22 +39,31 @@ class TaskTimerController {
     _sw.stop();
   }
 
-  Future<int> stopAndSave() async {
-    // Сохраняем только то, что накопилось в Stopwatch.
+  Future<int> stopAndSave({String? note}) async {
     _sw.stop();
     _timer?.cancel();
     _timer = null;
 
-    final addMs = _sw.elapsedMilliseconds;
+    final durationMs = _sw.elapsedMilliseconds;
+    final startedAtMs = _startedAtMs ?? DateTime.now().millisecondsSinceEpoch;
+
     _sw.reset();
+    _startedAtMs = null;
 
     isRunning.value = false;
     tickMs.value = 0;
 
-    if (addMs > 0) {
-      await _service.addSpent(workId: workId, taskId: taskId, addMs: addMs);
+    if (durationMs > 0) {
+      await _service.addSession(
+        workId: workId,
+        taskId: taskId,
+        startedAtMs: startedAtMs,
+        durationMs: durationMs,
+        note: note,
+      );
     }
-    return addMs;
+
+    return durationMs;
   }
 
   void dispose() {

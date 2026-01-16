@@ -6,11 +6,19 @@ class TaskTimerService {
   final WorksService works;
   TaskTimerService(this.works);
 
-  Future<void> addSpent({
+  Future<void> addSession({
     required String workId,
     required String taskId,
-    required int addMs,
+    required int startedAtMs,
+    required int durationMs,
+    String? note,
   }) async {
-    await works.addSpent(workId: workId, taskId: taskId, addMs: addMs);
+    await works.addSession(
+      workId: workId,
+      taskId: taskId,
+      startedAtMs: startedAtMs,
+      durationMs: durationMs,
+      note: note,
+    );
   }
 }

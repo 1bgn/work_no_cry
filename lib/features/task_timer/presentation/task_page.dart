@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:signals/signals_flutter.dart';
 
 import '../../../app/di/injection.dart';
@@ -36,78 +37,71 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    final work = works.findWork(widget.workId);
-    final task = works.findTask(widget.workId, widget.taskId);
-
-    if (work == null || task == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Задача')),
-        body: const Center(child: Text('Задача не найдена')),
-      );
-    }
-
-    final stored = task.spent;
-
     return Scaffold(
-      appBar: AppBar(title: Text(task.title)),
-      body: Watch(
-         (context) {
-           final live = Duration(milliseconds: timer.tickMs.value);
+      appBar: AppBar(title: const Text('Задача'),actions: [
+        IconButton(
+          icon: const Icon(Icons.history),
+          onPressed: () => context.go('/works/${widget.workId}/tasks/${widget.taskId}/sessions'),
+        ),
+      ],),
+      body: Watch((context) {
+        final work = works.findWork(widget.workId);
+        final task = works.findTask(widget.workId, widget.taskId);
 
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Работа: ${work.title}', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 12),
-                Text('Накоплено (сохранено): ${formatDuration(stored)}'),
-                const SizedBox(height: 8),
-                Text('Текущая сессия: ${formatDuration(live)}'),
-                const SizedBox(height: 8),
-                Text('Будет итого: ${formatDuration(stored + live)}'),
-                const Spacer(),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () {
-                          timer.start();
-                          setState(() {});
-                        },
-                        child: const Text('Старт'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          timer.pause();
-                          setState(() {});
-                        },
-                        child: const Text('Пауза'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.tonal(
-                    onPressed: () async {
-                      await timer.stopAndSave();
-                      await works.load(); // подтянуть обновлённое время в списки
-                      if (mounted) setState(() {});
-                    },
-                    child: const Text('Стоп и сохранить'),
-                  ),
-                ),
-              ],
-            ),
-          );
+        if (work == null || task == null) {
+          return const Center(child: Text('Задача не найдена'));
         }
-      ),
+
+        final stored = task.spent;
+        final live = Duration(milliseconds: timer.tickMs.value);
+        final running = timer.isRunning.value;
+
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Работа: ${work.title}',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              Text('Накоплено (сохранено): ${formatDuration(stored)}'),
+              const SizedBox(height: 8),
+              Text('Текущая сессия: ${formatDuration(live)}'),
+              const SizedBox(height: 8),
+              Text('Будет итого: ${formatDuration(stored + live)}'),
+              const Spacer(),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () async {
+                        if (!running) {
+                          timer.start();
+                        } else {
+                          await timer.stopAndSave();
+                          await works.load(); // подтянуть обновлённое время
+                        }
+                      },
+                      child: Text(running ? 'Стоп и сохранить' : 'Старт'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: running ? () => timer.pause() : null,
+                      child: const Text('Пауза'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
+
 }

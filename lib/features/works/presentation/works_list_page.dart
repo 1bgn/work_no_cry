@@ -45,6 +45,10 @@ class _WorksListPageState extends State<WorksListPage> {
               child: Text('Итого: ${formatDuration(c.totalSpent.value)}'),
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.insights_outlined),
+            onPressed: () => context.go('/stats'),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(

@@ -14,6 +14,33 @@ class WorksController {
       works.value.fold(Duration.zero, (a, w) => a + w.total));
 
   WorksController(this._service);
+  Future<void> addSession({
+    required String workId,
+    required String taskId,
+    required int startedAtMs,
+    required int durationMs,
+    String? note,
+  }) async {
+    works.value = await _service.addSession(
+      workId: workId,
+      taskId: taskId,
+      startedAtMs: startedAtMs,
+      durationMs: durationMs,
+      note: note,
+    );
+  }
+
+  Future<void> deleteSession({
+    required String workId,
+    required String taskId,
+    required String sessionId,
+  }) async {
+    works.value = await _service.deleteSession(
+      workId: workId,
+      taskId: taskId,
+      sessionId: sessionId,
+    );
+  }
 
   Future<void> load() async {
     isLoading.value = true;
